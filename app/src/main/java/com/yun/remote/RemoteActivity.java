@@ -37,6 +37,9 @@ public class RemoteActivity extends Activity {
 
     private void createRemote(Bundle bundle) {
         Class thisClass = null;
+        if (bundle == null) {
+            bundle = new Bundle();
+        }
         try {
             thisClass = Class.forName("android.app.Activity");
         } catch (ClassNotFoundException e) {
@@ -44,6 +47,7 @@ public class RemoteActivity extends Activity {
         }
         try {
             Method method = thisClass.getDeclaredMethod("onCreate", Bundle.class);
+            method.setAccessible(true);
             method.invoke(remote, bundle);
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
@@ -127,19 +131,73 @@ public class RemoteActivity extends Activity {
             }
 
 
-        } catch (NoSuchMethodException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+
+            try {
+                Method method = getMiAttach(thisClass);
+                method.invoke(remote, getBaseContext(), aThread, instr, token, ident, application, intent, info, title, parent, id, lastNonConfigurationInstances, config);
+            } catch (Exception e1) {
+                e1.printStackTrace();
+                Method method = getZTEAttach(thisClass);
+                try {
+                    method.invoke(remote, getBaseContext(), aThread, instr, token, ident, application, intent, info, title, parent, id, lastNonConfigurationInstances, config, referrer, voiceInteractor);
+                } catch (IllegalAccessException e2) {
+                    e2.printStackTrace();
+                } catch (InvocationTargetException e2) {
+                    e2.printStackTrace();
+                }
+            }
+
         }
     }
 
+    /**
+     * 小米
+     *
+     * @param thisClass
+     * @return
+     */
+    private Method getMiAttach(Class thisClass) {
+        Method method = null;
+        try {
+
+            method = thisClass.getDeclaredMethod("attach", new Class[]{Context.class, Class.forName("android.app.ActivityThread"), Instrumentation.class,
+                    IBinder.class, int.class, Application.class, Intent.class, ActivityInfo.class, CharSequence.class
+                    , Activity.class, String.class, Class.forName("android.app.Activity$NonConfigurationInstances"), Configuration.class});
+            method.setAccessible(true);
+
+        } catch (Exception e1) {
+
+        }
+        return method;
+    }
+
+
+    /**
+     * 中兴
+     *
+     * @param thisClass
+     * @return
+     */
+    private Method getZTEAttach(Class thisClass) {
+        Method method = null;
+        try {
+            method = thisClass.getDeclaredMethod("attach", new Class[]{Context.class, Class.forName("android.app.ActivityThread"), Instrumentation.class,
+                    IBinder.class, int.class, Application.class, Intent.class, ActivityInfo.class, CharSequence.class
+                    , Activity.class, String.class, Class.forName("android.app.Activity$NonConfigurationInstances"), Configuration.class, String.class,
+                    Class.forName("com.android.internal.app.IVoiceInteractor")});
+            method.setAccessible(true);
+
+        } catch (Exception e1) {
+
+        }
+        return method;
+    }
+
     private static View getRootView(Activity context) {
-        return ((ViewGroup) context.findViewById(android.R.id.content)).getRootView();
+
+        return context.getWindow().getDecorView();
     }
 
     @Override
