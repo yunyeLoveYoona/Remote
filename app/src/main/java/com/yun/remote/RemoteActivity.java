@@ -19,16 +19,17 @@ import java.lang.reflect.Method;
 /**
  * Created by dell on 2016/8/1.
  */
-public class RemoteActivity extends Activity {
-    private Activity remote;
+public class RemoteActivity<T extends Activity> extends Activity {
+    private T remote;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        remote = (Activity) Remote.get(getIntent().getStringExtra("remote"));
+        remote = (T) Remote.get(getIntent().getStringExtra("remote"));
         if (remote != null) {
             attachRemote();
             remote.setTheme(R.style.AppTheme);
+            remote.setIntent(getIntent());
             createRemote(savedInstanceState);
             setContentView(getRootView(remote));
         }
@@ -211,6 +212,7 @@ public class RemoteActivity extends Activity {
             }
             try {
                 Method method = thisClass.getDeclaredMethod("onDestroy");
+                method.setAccessible(true);
                 method.invoke(remote);
             } catch (NoSuchMethodException e) {
                 e.printStackTrace();
@@ -223,4 +225,8 @@ public class RemoteActivity extends Activity {
         super.onDestroy();
     }
 
+
+    protected T getActivity() {
+        return remote;
+    }
 }
